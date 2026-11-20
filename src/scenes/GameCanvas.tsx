@@ -25,6 +25,10 @@ export function GameCanvas() {
       shadows={preset.shadowMapSize > 0}
       gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
       camera={{ fov: 55, near: 0.1, far: 2000, position: [0, 1.6, 8] }}
+      onCreated={(state) => {
+        // Test hook: lets automation step frames even when the browser throttles a hidden tab.
+        if (debug || import.meta.env.DEV) (window as unknown as { __r3f?: unknown }).__r3f = state
+      }}
     >
       {qualityAuto && <PerformanceMonitor flipflops={3} onDecline={stepDownQuality} />}
       <Suspense fallback={null}>

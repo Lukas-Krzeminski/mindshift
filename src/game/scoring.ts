@@ -8,7 +8,7 @@ export interface ScoreEntry {
   points: number
 }
 
-export type ScoredPuzzle = 'puzzle1' | 'puzzle2'
+export type ScoredPuzzle = 'puzzle1' | 'puzzle2' | 'puzzle3'
 
 export interface PuzzleStats {
   puzzle: ScoredPuzzle
@@ -21,12 +21,12 @@ export interface PuzzleStats {
   fullCoverage: boolean
   /** Number of times a path was cut by another path or cleared by the player. */
   cutsAndResets: number
-  /** 5-HT2A gate cells lit (Puzzle 2 only). */
+  /** 5-HT2A gate cells lit. */
   gatesLit: number
 }
 
 export const POINTS = {
-  solved: { puzzle1: 1000, puzzle2: 1500 } as Record<ScoredPuzzle, number>,
+  solved: { puzzle1: 800, puzzle2: 1200, puzzle3: 1800 } as Record<ScoredPuzzle, number>,
   perPairOnTimeout: 150,
   perSecondRemaining: 20,
   fullCoherence: 500,
@@ -38,7 +38,7 @@ export const POINTS = {
   monolithReached: 300,
 } as const
 
-const NAMES: Record<ScoredPuzzle, string> = { puzzle1: 'Puzzle 1', puzzle2: 'Puzzle 2' }
+const NAMES: Record<ScoredPuzzle, string> = { puzzle1: 'Puzzle 1', puzzle2: 'Puzzle 2', puzzle3: 'Puzzle 3' }
 
 export function scorePuzzle(s: PuzzleStats): ScoreEntry[] {
   const name = NAMES[s.puzzle]
@@ -54,7 +54,7 @@ export function scorePuzzle(s: PuzzleStats): ScoreEntry[] {
   } else if (s.connectedPairs > 0) {
     entries.push({ label: `${name} · partial connections`, points: s.connectedPairs * POINTS.perPairOnTimeout })
   }
-  if (s.puzzle === 'puzzle2' && s.gatesLit > 0) {
+  if (s.gatesLit > 0) {
     entries.push({ label: `${name} · 5-HT2A gates lit`, points: s.gatesLit * POINTS.perGate })
   }
   return entries
@@ -77,10 +77,10 @@ export const totalOf = (entries: ScoreEntry[]): number => entries.reduce((sum, e
 
 export const RANKS = [
   { min: 0, title: 'First Spark' },
-  { min: 2000, title: 'Signal Seeker' },
-  { min: 3500, title: 'Signal Weaver' },
-  { min: 5000, title: 'Network Architect' },
-  { min: 6000, title: 'Neural Cartographer' },
+  { min: 2500, title: 'Signal Seeker' },
+  { min: 4500, title: 'Signal Weaver' },
+  { min: 6500, title: 'Network Architect' },
+  { min: 8500, title: 'Neural Cartographer' },
 ] as const
 
 export function rankFor(total: number): string {
@@ -90,5 +90,5 @@ export function rankFor(total: number): string {
 }
 
 /** Visual-only reward tier (extra aurora, bigger blossom...). Never affects the branch. */
-export const RADIANT_THRESHOLD = 4500
+export const RADIANT_THRESHOLD = 6000
 export const isRadiant = (total: number): boolean => total >= RADIANT_THRESHOLD

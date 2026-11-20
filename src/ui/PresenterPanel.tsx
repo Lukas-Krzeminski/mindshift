@@ -73,7 +73,7 @@ export function PresenterPanel() {
         ))}
       </div>
 
-      <h3>Puzzle 2 outcome</h3>
+      <h3>Required puzzle (3) outcome</h3>
       <div className="seg">
         {([null, 'positive', 'challenging'] as const).map((b) => (
           <button key={String(b)} className={`btn ${settings.forcedBranch === b ? 'on' : ''}`} onClick={() => setSettings({ forcedBranch: b })}>

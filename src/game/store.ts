@@ -17,7 +17,7 @@ export interface Settings {
   intensity: 'full' | 'reduced'
   /** Presenter can freeze puzzle/world timers for class discussion. */
   timersPaused: boolean
-  /** Presenter override for the Puzzle 2 outcome (null = normal rule). */
+  /** Presenter override for the required Puzzle 3 outcome (null = normal rule). */
   forcedBranch: Branch | null
 }
 

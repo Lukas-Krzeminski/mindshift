@@ -5,6 +5,8 @@
 import { useGame } from './store'
 import { PHASE_META, branchOfWorld, isWorldPhase } from './phases'
 import { scoreInsight, scorePuzzle, type PuzzleStats, type ScoredPuzzle } from './scoring'
+import { usePuzzle } from '../puzzle/puzzleStore'
+import { getLevel, puzzleForPhase } from '../puzzle/levels'
 
 const g = () => useGame.getState()
 
@@ -13,14 +15,13 @@ export function skipCurrent(): boolean {
   const { flow, dispatch } = g()
   const kind = PHASE_META[flow.phase].kind
   if (flow.phase === 'title') return dispatch({ type: 'START' })
-  if (flow.phase === 'references') return dispatch({ type: 'BACK' })
   if (kind === 'cinematic') return dispatch({ type: 'NEXT' })
   if (kind === 'puzzle') return dispatch({ type: 'PUZZLE_SOLVED' })
   if (kind === 'world') return dispatch({ type: 'WORLD_COMPLETE' })
   return false
 }
 
-const isScoredPuzzle = (p: string): p is ScoredPuzzle => p === 'puzzle1' || p === 'puzzle2'
+const isScoredPuzzle = (p: string): p is ScoredPuzzle => p === 'puzzle1' || p === 'puzzle2' || p === 'puzzle3'
 
 /** Reports a finished puzzle: records its score, then advances the flow. */
 export function reportPuzzleResult(stats: Omit<PuzzleStats, 'puzzle'>): boolean {
@@ -33,25 +34,41 @@ export function reportPuzzleResult(stats: Omit<PuzzleStats, 'puzzle'>): boolean 
 // Simulations used by dev stubs and window.__mindshift until real scenes exist.
 // ---------------------------------------------------------------------------
 
+/** If a real lattice is live, auto-solve/time it out through the puzzle itself (real stats, real FX). */
+function livePuzzle(): boolean {
+  const key = puzzleForPhase(g().flow.phase)
+  return !!key && usePuzzle.getState().run?.key === key
+}
+
 export function simulateSolve(): boolean {
+  if (livePuzzle()) {
+    usePuzzle.getState().autoSolve()
+    return true
+  }
+  const key = puzzleForPhase(g().flow.phase)
+  const level = key ? getLevel(key) : null
   return reportPuzzleResult({
     solved: true,
     secondsRemaining: 24,
-    connectedPairs: 5,
-    totalPairs: 5,
+    connectedPairs: level?.colors ?? 4,
+    totalPairs: level?.colors ?? 4,
     fullCoverage: false,
     cutsAndResets: 1,
-    gatesLit: g().flow.phase === 'puzzle2' ? 2 : 0,
+    gatesLit: level ? level.gate.reduce((n, v) => n + v, 0) : 0,
   })
 }
 
 export function simulateTimeout(): boolean {
   if (!isScoredPuzzle(g().flow.phase)) return false
+  if (livePuzzle()) {
+    usePuzzle.getState().forceTimeout()
+    return true
+  }
   return reportPuzzleResult({
     solved: false,
     secondsRemaining: 0,
     connectedPairs: 2,
-    totalPairs: 5,
+    totalPairs: 8,
     fullCoverage: false,
     cutsAndResets: 4,
     gatesLit: 1,

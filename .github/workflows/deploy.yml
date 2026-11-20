@@ -1,8 +1,9 @@
 name: Deploy to GitHub Pages
 
+# Manual only: the published game (the link given to the teacher) changes only when someone
+# deliberately runs this workflow (Actions tab → "Deploy to GitHub Pages" → Run workflow,
+# or `gh workflow run deploy.yml`). Pushing new work does not touch the live site.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

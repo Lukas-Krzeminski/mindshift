@@ -14,22 +14,27 @@ function run(events: FlowEvent[], ctx: FlowContext = normal, start: FlowState = 
   return events.reduce((s, e) => transition(s, e, ctx), start)
 }
 
-const toPuzzle2: FlowEvent[] = [
+const toPuzzle3: FlowEvent[] = [
   { type: 'START' },
   { type: 'NEXT' }, // clinic -> brainDive
   { type: 'NEXT' }, // brainDive -> tutorial
   { type: 'PUZZLE_SOLVED' }, // tutorial -> puzzle1
   { type: 'PUZZLE_SOLVED' }, // puzzle1 -> puzzle2
+  { type: 'PUZZLE_SOLVED' }, // puzzle2 -> puzzle3
 ]
 
 describe('main flow', () => {
-  it('walks title -> puzzle2 in order', () => {
-    expect(run(toPuzzle2).phase).toBe('puzzle2')
+  it('walks title -> puzzle3 in order', () => {
+    expect(run(toPuzzle3).phase).toBe('puzzle3')
   })
 
-  it('puzzle 1 timeout still continues to puzzle 2', () => {
+  it('puzzle 1 and 2 timeouts still continue (only puzzle 3 decides the world)', () => {
     const s = run([{ type: 'START' }, { type: 'NEXT' }, { type: 'NEXT' }, { type: 'PUZZLE_SOLVED' }, { type: 'PUZZLE_TIMEOUT' }])
     expect(s.phase).toBe('puzzle2')
+    expect(s.branch).toBeNull()
+    const s3 = transition(s, { type: 'PUZZLE_TIMEOUT' }, normal)
+    expect(s3.phase).toBe('puzzle3')
+    expect(s3.branch).toBeNull()
   })
 
   it('tutorial cannot time out', () => {
@@ -37,17 +42,19 @@ describe('main flow', () => {
     expect(transition(atTutorial, { type: 'PUZZLE_TIMEOUT' }, normal)).toBe(atTutorial)
   })
 
-  it('solving puzzle 2 enters the positive world; timeout enters the challenging world', () => {
-    const solved = run([...toPuzzle2, { type: 'PUZZLE_SOLVED' }])
+  it('solving puzzle 3 enters the positive world; timeout enters the challenging world', () => {
+    const solved = run([...toPuzzle3, { type: 'PUZZLE_SOLVED' }])
     expect(solved.phase).toBe('tripPositive')
     expect(solved.branch).toBe('positive')
-    const timedOut = run([...toPuzzle2, { type: 'PUZZLE_TIMEOUT' }])
+    const timedOut = run([...toPuzzle3, { type: 'PUZZLE_TIMEOUT' }])
     expect(timedOut.phase).toBe('tripChallenging')
     expect(timedOut.branch).toBe('challenging')
   })
 
-  it('world -> zoomOut -> integration -> results', () => {
-    const s = run([...toPuzzle2, { type: 'PUZZLE_SOLVED' }, { type: 'WORLD_COMPLETE' }, { type: 'NEXT' }, { type: 'NEXT' }])
+  it('world -> lantern ending -> results (no return to the clinic)', () => {
+    const mid = run([...toPuzzle3, { type: 'PUZZLE_SOLVED' }, { type: 'WORLD_COMPLETE' }])
+    expect(mid.phase).toBe('ending')
+    const s = transition(mid, { type: 'NEXT' }, normal)
     expect(s.phase).toBe('results')
     expect(s.visitedWorlds).toEqual(['positive'])
   })
@@ -61,8 +68,8 @@ describe('main flow', () => {
 
 describe('presenter override', () => {
   it('forces the branch regardless of solve/timeout', () => {
-    expect(run([...toPuzzle2, { type: 'PUZZLE_SOLVED' }], { forcedBranch: 'challenging' }).phase).toBe('tripChallenging')
-    expect(run([...toPuzzle2, { type: 'PUZZLE_TIMEOUT' }], { forcedBranch: 'positive' }).phase).toBe('tripPositive')
+    expect(run([...toPuzzle3, { type: 'PUZZLE_SOLVED' }], { forcedBranch: 'challenging' }).phase).toBe('tripChallenging')
+    expect(run([...toPuzzle3, { type: 'PUZZLE_TIMEOUT' }], { forcedBranch: 'positive' }).phase).toBe('tripPositive')
   })
 
   it('JUMP reaches any phase; jumping to a world sets its branch', () => {
@@ -79,14 +86,14 @@ describe('presenter override', () => {
   })
 
   it('JUMP to title resets everything', () => {
-    const deep = run([...toPuzzle2, { type: 'PUZZLE_SOLVED' }])
+    const deep = run([...toPuzzle3, { type: 'PUZZLE_SOLVED' }])
     expect(transition(deep, { type: 'JUMP', phase: 'title' }, normal)).toEqual(initialFlow)
   })
 })
 
 describe('other-world run from Results', () => {
   const atResults = (solve: boolean) =>
-    run([...toPuzzle2, { type: solve ? 'PUZZLE_SOLVED' : 'PUZZLE_TIMEOUT' }, { type: 'WORLD_COMPLETE' }, { type: 'NEXT' }, { type: 'NEXT' }])
+    run([...toPuzzle3, { type: solve ? 'PUZZLE_SOLVED' : 'PUZZLE_TIMEOUT' }, { type: 'WORLD_COMPLETE' }, { type: 'NEXT' }, { type: 'NEXT' }])
 
   it.each([
     [true, 'tripChallenging'],
@@ -107,10 +114,7 @@ describe('other-world run from Results', () => {
     expect(transition(back, { type: 'PLAY_OTHER_WORLD' }, normal)).toBe(back)
   })
 
-  it('references round-trip and restart', () => {
-    const refs = transition(atResults(true), { type: 'SHOW_REFERENCES' }, normal)
-    expect(refs.phase).toBe('references')
-    expect(transition(refs, { type: 'BACK' }, normal).phase).toBe('results')
-    expect(transition(refs, { type: 'RESTART' }, normal)).toEqual(initialFlow)
+  it('restart from results', () => {
+    expect(transition(atResults(true), { type: 'RESTART' }, normal)).toEqual(initialFlow)
   })
 })

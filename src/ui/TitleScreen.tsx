@@ -1,6 +1,5 @@
 import { useGame } from '../game/store'
 import { audio } from '../audio/AudioManager'
-import { CONTENT_NOTE } from '../content/captions'
 
 export function TitleScreen() {
   const dispatch = useGame((s) => s.dispatch)
@@ -16,7 +15,6 @@ export function TitleScreen() {
   return (
     <div className="screen title-screen">
       <div className="title-block">
-        <p className="eyebrow">An interactive psychology experience</p>
         <h1 className="logo">
           MIND<span className="logo-slash">//</span>SHIFT
         </h1>
@@ -25,7 +23,6 @@ export function TitleScreen() {
           Begin
         </button>
       </div>
-      <p className="content-note">{CONTENT_NOTE}</p>
     </div>
   )
 }

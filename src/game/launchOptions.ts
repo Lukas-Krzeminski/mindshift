@@ -6,7 +6,7 @@ import { isQualityTier, type QualityTier } from '../quality/presets'
  * URL parameters for rehearsal and testing, e.g.
  *   ?presenter=1                    arm the presenter panel / hotkeys
  *   ?phase=tripChallenging          start directly in a phase
- *   ?branch=positive                force the Puzzle 2 outcome (and the world for later phases)
+ *   ?branch=positive                force the required Puzzle 3 outcome (and the world for later phases)
  *   ?quality=medium                 lock a quality tier (disables auto)
  *   ?debug=1                        stats overlay + window.__mindshift hooks
  */

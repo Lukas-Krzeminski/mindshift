@@ -27,7 +27,7 @@ Rehearsal URLs (append to the game URL):
 
 - `?presenter=1`: arm presenter mode from the start
 - `?phase=tripChallenging`: start in any phase (`title`, `clinic`, `brainDive`, `tutorial`, `puzzle1`, `puzzle2`, `tripPositive`, `tripChallenging`, `zoomOut`, `integration`, `results`, `references`)
-- `?branch=positive` / `?branch=challenging`: force the Puzzle 2 outcome
+- `?branch=positive` / `?branch=challenging`: force the required Puzzle 3 outcome
 - `?quality=high|medium|low`: lock a graphics tier
 - `?debug=1`: FPS stats + `window.__mindshift` test hooks
 

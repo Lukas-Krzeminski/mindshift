@@ -11,12 +11,11 @@ export const PHASES = [
   'tutorial',
   'puzzle1',
   'puzzle2',
+  'puzzle3',
   'tripPositive',
   'tripChallenging',
-  'zoomOut',
-  'integration',
+  'ending',
   'results',
-  'references',
 ] as const
 
 export type Phase = (typeof PHASES)[number]
@@ -28,19 +27,18 @@ export const PHASE_META: Record<Phase, { label: string; kind: PhaseKind }> = {
   clinic: { label: 'Clinic intro', kind: 'cinematic' },
   brainDive: { label: 'Brain dive', kind: 'cinematic' },
   tutorial: { label: 'Tutorial', kind: 'puzzle' },
-  puzzle1: { label: 'Puzzle 1', kind: 'puzzle' },
-  puzzle2: { label: 'Puzzle 2 (required)', kind: 'puzzle' },
+  puzzle1: { label: 'Puzzle 1 (4 pairs)', kind: 'puzzle' },
+  puzzle2: { label: 'Puzzle 2 (6 pairs)', kind: 'puzzle' },
+  puzzle3: { label: 'Puzzle 3 (required)', kind: 'puzzle' },
   tripPositive: { label: 'Luminous Shallows', kind: 'world' },
   tripChallenging: { label: 'Brutalist Maze', kind: 'world' },
-  zoomOut: { label: 'Zoom-out', kind: 'cinematic' },
-  integration: { label: 'Integration', kind: 'cinematic' },
+  ending: { label: 'Ending: lanterns at dawn', kind: 'cinematic' },
   results: { label: 'Results', kind: 'screen' },
-  references: { label: 'References', kind: 'screen' },
 }
 
 export interface FlowState {
   phase: Phase
-  /** World reached by the main run; decided only by the end of Puzzle 2. */
+  /** World reached by the main run; decided only by the end of Puzzle 3 (the required lattice). */
   branch: Branch | null
   /** True while the optional "other world" run (started from Results) is playing. */
   bonusRun: boolean
@@ -55,14 +53,12 @@ export type FlowEvent =
   | { type: 'PUZZLE_TIMEOUT' }
   | { type: 'WORLD_COMPLETE' }
   | { type: 'PLAY_OTHER_WORLD' }
-  | { type: 'SHOW_REFERENCES' }
-  | { type: 'BACK' }
   | { type: 'RESTART' }
   /** Presenter-only: jump anywhere, optionally choosing the world. */
   | { type: 'JUMP'; phase: Phase; branch?: Branch }
 
 export interface FlowContext {
-  /** Presenter override for the Puzzle 2 outcome. null = normal deterministic rule. */
+  /** Presenter override for the required-puzzle (Puzzle 3) outcome. null = normal deterministic rule. */
   forcedBranch: Branch | null
 }
 
@@ -126,7 +122,11 @@ export function transition(state: FlowState, event: FlowEvent, ctx: FlowContext)
       return event.type === 'PUZZLE_SOLVED' || event.type === 'PUZZLE_TIMEOUT'
         ? { ...state, phase: 'puzzle2' }
         : state
-    case 'puzzle2': {
+    case 'puzzle2':
+      return event.type === 'PUZZLE_SOLVED' || event.type === 'PUZZLE_TIMEOUT'
+        ? { ...state, phase: 'puzzle3' }
+        : state
+    case 'puzzle3': {
       if (event.type !== 'PUZZLE_SOLVED' && event.type !== 'PUZZLE_TIMEOUT') return state
       const decided = decideBranch({ solvedBeforeDeadline: event.type === 'PUZZLE_SOLVED' })
       return enterMainWorld(state, ctx.forcedBranch ?? decided)
@@ -136,13 +136,10 @@ export function transition(state: FlowState, event: FlowEvent, ctx: FlowContext)
       if (event.type !== 'WORLD_COMPLETE') return state
       return state.bonusRun
         ? { ...state, phase: 'results', bonusRun: false }
-        : { ...state, phase: 'zoomOut' }
-    case 'zoomOut':
-      return event.type === 'NEXT' ? { ...state, phase: 'integration' } : state
-    case 'integration':
+        : { ...state, phase: 'ending' }
+    case 'ending':
       return event.type === 'NEXT' ? { ...state, phase: 'results' } : state
     case 'results': {
-      if (event.type === 'SHOW_REFERENCES') return { ...state, phase: 'references' }
       if (event.type === 'PLAY_OTHER_WORLD') {
         const other = otherWorldAvailable(state)
         if (!other) return state
@@ -155,8 +152,6 @@ export function transition(state: FlowState, event: FlowEvent, ctx: FlowContext)
       }
       return state
     }
-    case 'references':
-      return event.type === 'BACK' ? { ...state, phase: 'results' } : state
   }
 }
 
@@ -165,8 +160,8 @@ function jump(state: FlowState, phase: Phase, branch: Branch | undefined, ctx: F
   if (isWorldPhase(phase)) {
     return enterMainWorld(state, branchOfWorld(phase))
   }
-  // Phases after the worlds need a branch (integration line, results, other-world button).
-  const needsBranch = phase === 'zoomOut' || phase === 'integration' || phase === 'results' || phase === 'references'
+  // Phases after the worlds need a branch (Alex's closing line, results, other-world button).
+  const needsBranch = phase === 'ending' || phase === 'results'
   const chosen = branch ?? state.branch ?? ctx.forcedBranch ?? (needsBranch ? 'positive' : null)
   return {
     ...state,

@@ -6,6 +6,8 @@ import { defaultSettings, selectTotalScore, useGame } from '../src/game/store'
 import { initialFlow } from '../src/game/phases'
 import { REFERENCES } from '../src/content/references'
 import { CLINIC_CAPTIONS, INTEGRATION, LAB_LINES, TAKEAWAYS } from '../src/content/captions'
+import { SYMBOL_LIST } from '../src/content/symbols'
+import { useSymbols } from '../src/ui/symbolStore'
 
 describe('launch options', () => {
   it('parses rehearsal URLs', () => {
@@ -81,7 +83,13 @@ describe('store', () => {
 
 describe('content integrity', () => {
   const ids = new Set(REFERENCES.map((r) => r.id))
-  const captions = [...CLINIC_CAPTIONS, ...LAB_LINES, ...TAKEAWAYS, INTEGRATION.caption]
+  const captions = [
+    ...CLINIC_CAPTIONS,
+    ...LAB_LINES,
+    ...TAKEAWAYS,
+    INTEGRATION.caption,
+    ...SYMBOL_LIST.map((x) => ({ id: x.id, text: `${x.title}. ${x.meaning}`, sources: x.sources })),
+  ]
 
   it('every factual caption cites a known reference id', () => {
     for (const c of captions) for (const src of c.sources) expect(ids.has(src), `${c.id} -> ${src}`).toBe(true)
@@ -90,5 +98,37 @@ describe('content integrity', () => {
   it('never claims psilocybin treats or cures cancer, or treats nerve damage', () => {
     const text = captions.map((c) => c.text.toLowerCase()).join(' ')
     expect(text).not.toMatch(/cures?\b|treats cancer|neuropathy|nerve damage/)
+  })
+})
+
+describe('symbol cards', () => {
+  beforeEach(() => {
+    useGame.setState({ flow: initialFlow, flowSeq: 0, scoreEntries: [], settings: defaultSettings })
+    useSymbols.getState().clear()
+  })
+
+  it('show one at a time, in order, never repeating within a phase', () => {
+    const s = useSymbols.getState()
+    s.show('room')
+    s.show('capsule')
+    s.show('room')
+    expect(useSymbols.getState().current?.id).toBe('room')
+    expect(useSymbols.getState().queue).toEqual(['capsule'])
+    useSymbols.getState().next()
+    expect(useSymbols.getState().current?.id).toBe('capsule')
+    useSymbols.getState().next()
+    expect(useSymbols.getState().current).toBeNull()
+  })
+
+  it('clear the moment the phase changes', () => {
+    useSymbols.getState().show('room')
+    useSymbols.getState().show('capsule')
+    useGame.getState().dispatch({ type: 'START' })
+    expect(useSymbols.getState().current).toBeNull()
+    expect(useSymbols.getState().queue).toEqual([])
+  })
+
+  it('stay short enough to read aloud', () => {
+    for (const x of SYMBOL_LIST) expect(x.meaning.split(' ').length, x.id).toBeLessThanOrEqual(22)
   })
 })

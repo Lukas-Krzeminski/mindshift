@@ -17,10 +17,14 @@ export const CLINIC_CAPTIONS: Caption[] = [
   { id: 'C3', text: 'Today: a supervised research session testing psilocybin-assisted therapy.', sources: ['agrawal2023', 'johnson2008'] },
 ]
 
+export const CAPSULE_LINE: Caption = {
+  id: 'C4',
+  text: "Psilocybin is the active compound in 'magic mushrooms'. In studies, patients take it as a measured capsule.",
+  sources: ['ross2016', 'agrawal2023'],
+}
+
 export const THERAPIST = {
   breatheIntro: 'Before we begin, breathe with me.',
-  breatheAgain: 'Alex, you are safe. I am right here. Remember the breathing we practiced.',
-  moveToward: 'If something frightening appears, move toward it.',
   integrationQuestion: 'What did you notice?',
 }
 
@@ -30,9 +34,6 @@ export const LAB_LINES: Caption[] = [
 ]
 
 export const METAPHOR_TAG = 'Game metaphor, not a literal model of the brain.'
-
-export const FICTION_DISCLAIMER =
-  'In this game, finishing decides which world Alex enters. In reality, no test can predict how a psychedelic experience will go.'
 
 export const ONE_POSSIBLE_EXPERIENCE = "One possible experience, not everyone's."
 
@@ -51,6 +52,12 @@ export const CHALLENGING_THOUGHTS = [
   "I'm scared.",
 ]
 
+/** Alex's own voice in the challenging world: the preparation she remembers, no therapist. */
+export const CHALLENGING_SELF = {
+  breathe: 'I can breathe. Like we practised.',
+  toward: "Don't run from it. Go toward it.",
+}
+
 export const CHALLENGING_RESOLUTION = {
   alex: "It's still hard. But I'm not alone in it.",
   tag: "Challenging experiences can be distressing. Support helps, but doesn't guarantee they resolve.",
@@ -62,12 +69,12 @@ export const INTEGRATION = {
   caption: { id: 'I1', text: 'Integration sessions help people make sense of what they experienced.', sources: ['rosa2025', 'johnson2008'] } as Caption,
 }
 
+/** Last line of the ending, before the results. Story, not a research claim. */
+export const CLOSING_LINE = "The fear didn't disappear. Her relationship to it changed."
+
 export const TAKEAWAYS: Caption[] = [
   { id: 'R1', text: 'Cancer can bring serious anxiety, depression, and existential distress.', sources: ['ross2016', 'bader2024'] },
   { id: 'R2', text: 'Psilocybin becomes psilocin, which acts on 5-HT2A receptors; brain-network activity changes temporarily.', sources: ['madsen2019', 'siegel2024'] },
   { id: 'R3', text: 'Early trials in people with cancer found reductions in depression and anxiety, alongside preparation, supervision, and integration.', sources: ['agrawal2023', 'bader2024', 'bmc2025'] },
   { id: 'R4', text: "Studies are small and often lack placebo groups. Psilocybin does not treat cancer itself. Experiences can't be predicted, and neither a good nor a hard one guarantees an outcome.", sources: ['agrawal2023', 'bader2024', 'bmc2025'] },
 ]
-
-export const CONTENT_NOTE =
-  'This is a fictional story about serious illness. One scene uses intense, shifting colors (no rapid flashing).'

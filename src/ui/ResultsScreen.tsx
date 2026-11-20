@@ -1,13 +1,30 @@
 import { useGame, selectTotalScore } from '../game/store'
 import { otherWorldAvailable } from '../game/phases'
-import { rankFor } from '../game/scoring'
-import { FICTION_DISCLAIMER, TAKEAWAYS } from '../content/captions'
+import { rankFor, type ScoreEntry } from '../game/scoring'
+import { TAKEAWAYS } from '../content/captions'
 import { useCountUp } from './useCountUp'
 import type { Branch } from '../game/outcome'
 
 const WORLD_NAMES: Record<Branch, string> = {
   positive: 'Luminous Shallows',
   challenging: 'Brutalist Maze',
+}
+
+/** One line per puzzle / insight, with its bonuses listed underneath (keeps the screen to one page). */
+function groupEntries(entries: ScoreEntry[]): { name: string; points: number; details: string }[] {
+  const groups = new Map<string, { points: number; parts: Map<string, number> }>()
+  for (const e of entries) {
+    const [name, part = ''] = e.label.split(' · ')
+    const g = groups.get(name) ?? { points: 0, parts: new Map<string, number>() }
+    g.points += e.points
+    if (part) g.parts.set(part, (g.parts.get(part) ?? 0) + 1)
+    groups.set(name, g)
+  }
+  return [...groups.entries()].map(([name, g]) => ({
+    name,
+    points: g.points,
+    details: [...g.parts.entries()].map(([p, n]) => (n > 1 ? `${p} ×${n}` : p)).join(' · '),
+  }))
 }
 
 export function ResultsScreen() {
@@ -29,10 +46,13 @@ export function ResultsScreen() {
             <div className="score-total">{shown.toLocaleString('en-US')}</div>
             <p className="rank">{rankFor(total)}</p>
             <ul className="breakdown">
-              {entries.map((e, i) => (
-                <li key={i}>
-                  <span>{e.label}</span>
-                  <span>+{e.points.toLocaleString('en-US')}</span>
+              {groupEntries(entries).map((g) => (
+                <li key={g.name}>
+                  <span>
+                    {g.name}
+                    <small>{g.details}</small>
+                  </span>
+                  <span>+{g.points.toLocaleString('en-US')}</span>
                 </li>
               ))}
               {entries.length === 0 && <li><span>No points recorded this run</span><span /></li>}
@@ -44,7 +64,6 @@ export function ResultsScreen() {
                 <li key={t.id}>{t.text}</li>
               ))}
             </ol>
-            <p className="disclaimer">{FICTION_DISCLAIMER}</p>
             {sawBoth && (
               <p className="disclaimer">You've seen both worlds: the same mind, two very different experiences.</p>
             )}
@@ -56,7 +75,6 @@ export function ResultsScreen() {
               Experience the {WORLD_NAMES[other]}
             </button>
           )}
-          <button className="btn" onClick={() => dispatch({ type: 'SHOW_REFERENCES' })}>References</button>
           <button className="btn" onClick={() => dispatch({ type: 'RESTART' })}>Play again</button>
         </div>
       </div>
